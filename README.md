@@ -7,9 +7,15 @@ basicly it's a gate and wrapper of Yonsm's gate in https://github.com/Yonsm/HAEx
 自动添加设备：
 需要在configuration.yaml hass放开customize
 建立customize.yaml，需要添加设备属性：
+hagenie_deviceType:#选填，类别，light,fan这样的，不填会根据属性light.xx获取light类型
 friendly_name: 台灯 #名称，有列表
+    hagenie_deviceName:类似friendly_name，透传的。
 hagenie_zone: 卧室  #位置，有列表
+    如果没有这个属性，会在组里找，在获取的places中找
 hagenie_propertyName: powerstate #可控制的属性名，不写则根据py中的所有属性
+
+我建议都写明
+
 
 位置列表：
 0  "门口"1  "客厅"2  "卧室"3  "客房"4  "主卧"5  "次卧"6  "书房"7  "餐厅"8  "厨房"9  "洗手间"

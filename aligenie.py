@@ -193,12 +193,12 @@ def discoveryDevice():
         if deviceType is None:
             _LOGGER.info('entity_id:%s deviceType is None',entity_id)
             continue
-        #获取device
+        #获取deviceName 名称
         deviceName = guessDeviceName(entity_id, attributes, _places, _aliases)
         if deviceName is None:
             _LOGGER.info('entity_id:%s deviceName is None',entity_id)
             continue
-        #获取zone
+        #获取zone位置
         zone = guessZone(entity_id, attributes, groups_ttributes, _places)
         if zone is None:
             _LOGGER.info('entity_id:%s zone is None',entity_id)
@@ -247,12 +247,13 @@ def discoveryDevice():
             #_LOGGER.info(json.dumps(sensor, indent=2, ensure_ascii=False))
     return {'devices': devices}
 
+#控制域命令响应
 async def controlDevice(action, payload):
     entity_id = payload['deviceId']
     domain = entity_id[:entity_id.find('.')]
     data = {"entity_id": entity_id }
-    if domain in TRANSLATIONS.keys():
-        translation = TRANSLATIONS[domain][action]
+    if domain in TRANSLATIONS.keys(): #可控属兴列表，不全可添加
+        translation = TRANSLATIONS[domain][action] #查找到函数列表，这里需要看hassapi
         if callable(translation):
             service, content = translation(_hass.states.get(entity_id), payload)
             data.update(content)
@@ -266,6 +267,7 @@ async def controlDevice(action, payload):
 
     return {} if result else errorResult('IOT_DEVICE_OFFLINE')
 
+#查询域响应
 def queryDevice(name, payload):
     deviceId = payload['deviceId']
 
@@ -443,6 +445,7 @@ def guessDeviceType(entity_id, attributes):
     # Map from domain
     return INCLUDE_DOMAINS[domain] if domain in INCLUDE_DOMAINS else None
 
+#获取deviceName 设备名，灯，彩灯这类的名称
 def guessDeviceName(entity_id, attributes, places, aliases):
     if 'hagenie_deviceName' in attributes:
         return attributes['hagenie_deviceName']
@@ -496,7 +499,7 @@ def guessZone(entity_id, attributes, groups_attributes, places):
 
     return None
 
-#属兴字段
+#属兴字段hagenie_propertyName不设置则自动补上全部属兴
 def guessPropertyAndAction(entity_id, attributes, state):
     # http://doc-bot.tmall.com/docs/doc.htm?treeId=393&articleId=108264&docType=1
     # http://doc-bot.tmall.com/docs/doc.htm?treeId=393&articleId=108268&docType=1
