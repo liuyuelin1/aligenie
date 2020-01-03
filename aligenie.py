@@ -29,7 +29,7 @@ _hass         = None
 _expire_hours = None
 _places       = []
 _aliases      = []
-
+#按版本返回token
 async def async_create_refresh_token77(
         user: models.User, client_id: Optional[str] = None) \
         -> models.RefreshToken:
@@ -41,7 +41,7 @@ async def async_create_refresh_token77(
     user.refresh_tokens[refresh_token.id] = refresh_token
     _hass.auth._store._async_schedule_save()
     return refresh_token
-
+#按版本返回token
 async def async_create_refresh_token78(
         user: models.User, client_id: Optional[str] = None,
         client_name: Optional[str] = None,
@@ -70,6 +70,7 @@ async def async_create_refresh_token78(
     _hass.auth._store._async_schedule_save()
     return refresh_token
 
+#加载时做的事情：获取token获取aliaslist
 async def async_setup(hass, config):
     global _hass, _expire_hours
     _hass         = hass
@@ -88,6 +89,7 @@ async def async_setup(hass, config):
     _aliases.append({'key': '电视', 'value': ['电视机']})
     return True
 
+#登录视图？
 class AliGenieGateView(HomeAssistantView):
     """View to handle Configuration requests."""
 
@@ -107,6 +109,7 @@ class AliGenieGateView(HomeAssistantView):
 
         return self.json(response)
 
+#出错时内容
 def errorResult(errorCode, messsage=None):
     """Generate error result"""
     messages = {
@@ -120,6 +123,7 @@ def errorResult(errorCode, messsage=None):
     }
     return {'errorCode': errorCode, 'message': messsage if messsage else messages[errorCode]}
 
+#请求处理：重点
 async def handleRequest(data):
     """Handle request"""
     header = data['header']
@@ -127,15 +131,21 @@ async def handleRequest(data):
     properties = None
     name = header['name']
     _LOGGER.info("Handle Request: %s", data)
-
+    #从hass获取令牌
     token = await _hass.auth.async_validate_access_token(payload['accessToken'])
     if token is not None:
         namespace = header['namespace']
+        #设备发现域
         if namespace == 'AliGenie.Iot.Device.Discovery':
+            _LOGGER.info('namespace = Discovery')
             result = discoveryDevice()
+        #设备控制域
         elif namespace == 'AliGenie.Iot.Device.Control':
+            _LOGGER.info('namespace = Control')
             result = await controlDevice(name, payload)
+        #设备查询域
         elif namespace == 'AliGenie.Iot.Device.Query':
+            _LOGGER.info('namespace = Query')
             result = queryDevice(name, payload)
             if not 'errorCode' in result:
                 properties = result
@@ -158,6 +168,7 @@ async def handleRequest(data):
     _LOGGER.info("Respnose: %s", response)
     return response
 
+#发现域响应组装
 def discoveryDevice():
 
     states = _hass.states.async_all()
@@ -166,29 +177,36 @@ def discoveryDevice():
     devices = []
     for state in states:
         attributes = state.attributes
-
+        #如果是隐藏的，跳过
         if attributes.get('hidden') or attributes.get('hagenie_hidden'):
+            _LOGGER.info('status is hidden')
             continue
-
+        #如果没有friendly_name 跳过
         friendly_name = attributes.get('friendly_name')
         if friendly_name is None:
+            _LOGGER.info('friendly_name is None')
             continue
 
         entity_id = state.entity_id
+        #获取品类
         deviceType = guessDeviceType(entity_id, attributes)
         if deviceType is None:
+            _LOGGER.info('entity_id:%s deviceType is None',entity_id)
             continue
-
+        #获取device
         deviceName = guessDeviceName(entity_id, attributes, _places, _aliases)
         if deviceName is None:
+            _LOGGER.info('entity_id:%s deviceName is None',entity_id)
             continue
-
+        #获取zone
         zone = guessZone(entity_id, attributes, groups_ttributes, _places)
         if zone is None:
+            _LOGGER.info('entity_id:%s zone is None',entity_id)
             continue
-
+        #获取zone
         prop,action = guessPropertyAndAction(entity_id, attributes, state.state)
         if prop is None:
+            _LOGGER.info('entity_id:%s prop is None',entity_id)
             continue
 
         # Merge all sensors into one for a zone
@@ -406,6 +424,7 @@ TRANSLATIONS = {
     }
 }
 
+#获取品类，需要与下面品类对应
 # http://doc-bot.tmall.com/docs/doc.htm?treeId=393&articleId=108271&docType=1
 def guessDeviceType(entity_id, attributes):
     if 'hagenie_deviceType' in attributes:
@@ -477,6 +496,7 @@ def guessZone(entity_id, attributes, groups_attributes, places):
 
     return None
 
+#属兴字段
 def guessPropertyAndAction(entity_id, attributes, state):
     # http://doc-bot.tmall.com/docs/doc.htm?treeId=393&articleId=108264&docType=1
     # http://doc-bot.tmall.com/docs/doc.htm?treeId=393&articleId=108268&docType=1
