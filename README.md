@@ -4,6 +4,7 @@ home assistant custom component for tmall genie
 
 basicly it's a gate and wrapper of Yonsm's gate in https://github.com/Yonsm/HAExtra/tree/master/hagenie
 
+test.sh 是添加模块到hass的例子，需要根据当前hass安装位置进行调整。
 自动添加设备：
 需要在configuration.yaml hass放开customize
 建立customize.yaml，需要添加设备属性：
